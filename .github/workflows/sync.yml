@@ -1,0 +1,37 @@
+name: Sync Upstream
+
+on:
+  workflow_dispatch:  # 允许手动触发
+  schedule:
+    - cron: '0 0 * * *'  # 每天 0 点运行
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检出当前仓库
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 设置 Git 用户信息
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+
+      # 添加上游仓库
+      - name: Add upstream repository
+        run: git remote add upstream https://github.com/Neisk/LoonKissSurge.git
+
+      # 拉取上游仓库的更新
+      - name: Fetch upstream changes
+        run: git fetch upstream
+
+      # 同步 main 分支
+      - name: Sync with upstream main
+        run: |
+          git checkout main || git checkout -b main --track origin/main
+          git pull origin main --rebase || true  # 确保本地与远程同步
+          git merge upstream/main --allow-unrelated-histories -m "Sync with upstream main"
+          git push origin main --force-with-lease || true
